@@ -12,21 +12,21 @@ fun main() {
 
 }
 
-fun part1(): Int {
+private fun part1(): Int {
     return (240298..784956)
         .filter { hasNonDecreasingDigits(it.toString()) }
         .filter { hasTwoAdjacentSameDigits(it.toString()) }
         .count()
 }
 
-fun part2(): Int {
+private fun part2(): Int {
     return (240298..784956)
         .filter { hasNonDecreasingDigits(it.toString()) }
         .filter { hasAGroupOfExactlyTwoAdjacentSameDigits(it.toString()) }
         .count()
 }
 
-fun hasNonDecreasingDigits(password: String): Boolean {
+private fun hasNonDecreasingDigits(password: String): Boolean {
     for (index in 1 until password.length) {
         if (password[index].toInt() < password[index - 1].toInt()) {
             return false
@@ -35,7 +35,7 @@ fun hasNonDecreasingDigits(password: String): Boolean {
     return true
 }
 
-fun hasTwoAdjacentSameDigits(password: String): Boolean {
+private fun hasTwoAdjacentSameDigits(password: String): Boolean {
     for (index in 1 until password.length) {
         if (password[index].toInt() == password[index - 1].toInt()) {
             return true
@@ -45,7 +45,7 @@ fun hasTwoAdjacentSameDigits(password: String): Boolean {
 }
 
 // like run-length encoding but without saying what symbol is repeated
-fun hasAGroupOfExactlyTwoAdjacentSameDigits(password: String): Boolean {
+private fun hasAGroupOfExactlyTwoAdjacentSameDigits(password: String): Boolean {
     var currentRun = 1
     var rle = ""
 

@@ -27,13 +27,13 @@ fun main() {
 
 }
 
-fun part1(lines1: List<Line>, lines2: List<Line>): Int? {
+private fun part1(lines1: List<Line>, lines2: List<Line>): Int? {
     val intersections = getAllIntersections(lines1, lines2)
 
     return intersections.map { it.getTaxicabMagnitude() }.min()
 }
 
-fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
+private fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
     val intersections = getAllIntersections(lines1, lines2)
 
     return intersections.map {
@@ -85,7 +85,7 @@ private fun getNextPoint(instruction: String, point: Point): Point {
     }
 }
 
-fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): List<Point> {
+private fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): List<Point> {
 
     val intersections = HashSet<Point>()
     for (l1 in lines1) {
@@ -97,7 +97,7 @@ fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): List<Point> {
     return intersections.toList()
 }
 
-fun getIntersection(line1: Line, line2: Line): Set<Point> {
+private fun getIntersection(line1: Line, line2: Line): Set<Point> {
     if ((line1.isHorizontal() && line2.isHorizontal()) || (!line1.isHorizontal() && !line2.isHorizontal())) {
         if (line1.getIntercept() != line2.getIntercept()) {
             return emptySet()

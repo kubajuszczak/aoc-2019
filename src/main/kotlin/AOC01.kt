@@ -1,13 +1,27 @@
-fun main() {
-    val result = getInput("input01.txt").readLines()
-        .map { getFuel(it.toInt()) }
-        .reduce { a, b -> a + b }
-    println(result)
+import kotlin.system.measureTimeMillis
 
-    val recursive = getInput("input01.txt").readLines()
+fun main() {
+    val input = getInput("input01.txt").readLines()
+
+    measureTimeMillis {
+        println(part1(input))
+    }.also { println("${it}ms") }
+
+    measureTimeMillis {
+        println(part2(input))
+    }.also { println("${it}ms") }
+}
+
+private fun part1(input: List<String>): Int {
+    return input
+        .map { getFuel(it.toInt()) }
+        .sum()
+}
+
+private fun part2(input: List<String>): Int {
+    return input
         .map { getRecursiveFuel(it.toInt()) }
-        .reduce { a, b -> a + b }
-    println(recursive)
+        .sum()
 }
 
 fun getFuel(mass: Int): Int {
@@ -16,7 +30,7 @@ fun getFuel(mass: Int): Int {
 
 fun getRecursiveFuel(mass: Int): Int {
     val x = getFuel(mass)
-    return if(x<=0){
+    return if (x <= 0) {
         0
     } else {
         getRecursiveFuel(x) + x

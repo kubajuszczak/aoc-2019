@@ -1,18 +1,32 @@
 import java.lang.Exception
+import kotlin.system.measureTimeMillis
 
 fun main() {
     val input = getInput("input02.txt").readText().split(",").map { it.toInt() }
 
-    println(iterate(setInputs(input, 12, 2)))
+    measureTimeMillis {
+        println(part1(input))
+    }.also { println("${it}ms") }
 
+    measureTimeMillis {
+        println(part2(input))
+    }.also { println("${it}ms") }
+}
+
+private fun part1(input: List<Int>): Int {
+    return runProgram(setInputs(input, 12, 2))
+}
+
+private fun part2(input: List<Int>): List<Int> {
+    val list = ArrayList<Int>()
     for (noun in 0..99) {
         for (verb in 0..99) {
-            if (iterate(setInputs(input, noun, verb), false) == 19690720) {
-                println(100 * noun + verb)
+            if (runProgram(setInputs(input, noun, verb), false) == 19690720) {
+                list.add(100 * noun + verb)
             }
         }
     }
-
+    return list
 }
 
 fun setInputs(program: List<Int>, noun: Int, verb: Int): IntComputer {
@@ -23,7 +37,7 @@ fun setInputs(program: List<Int>, noun: Int, verb: Int): IntComputer {
     return IntComputer(0, memory)
 }
 
-fun iterate(computer: IntComputer, verbose: Boolean = true): Int {
+fun runProgram(computer: IntComputer, verbose: Boolean = false): Int {
     var c = computer
     if (verbose) println(c)
 
@@ -32,8 +46,14 @@ fun iterate(computer: IntComputer, verbose: Boolean = true): Int {
             c = c.runInstruction()
             if (verbose) println(c)
         }
-    } catch (e: Exception) {
+    } catch (e: HaltException) {
         return c.read(0)
+    } catch (e: MemoryOverflowException) {
+        println("Program pointer exceeded memory size")
+        return -1
+    } catch (e: UnsupportedOpcodeException){
+        println("Attempted to run unsupported opcode ${e.message}")
+        return -1
     }
 }
 
@@ -61,7 +81,7 @@ class IntComputer(
 
     fun runInstruction(): IntComputer {
         if (pointer >= memory.size) {
-            throw Exception("Stack Overflow")
+            throw MemoryOverflowException()
         }
 
         when (val opcode = read(pointer)) {
@@ -78,10 +98,10 @@ class IntComputer(
                 )
             }
             99 -> {
-                throw Exception("Halt")
+                throw HaltException()
             }
             else -> {
-                throw Exception("Error $opcode")
+                throw UnsupportedOpcodeException("$opcode")
             }
         }
     }
@@ -90,3 +110,7 @@ class IntComputer(
         return "IntComputer(pointer=$pointer, memory=$memory)"
     }
 }
+
+class HaltException() : Exception()
+class MemoryOverflowException() : Exception()
+class UnsupportedOpcodeException(s: String) : Exception(s)
