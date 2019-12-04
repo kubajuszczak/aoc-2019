@@ -58,38 +58,7 @@ fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
     }.min()
 }
 
-fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): ArrayList<Point> {
-
-    val intersections = ArrayList<Point>()
-    for (l1 in lines1) {
-        for (l2 in lines2) {
-            intersections.addAll(getIntersection(l1, l2))
-        }
-    }
-    return intersections
-}
-
-fun getIntersection(line1: Line, line2: Line): List<Point> {
-    val set1 = getLinePoints(line1)
-    val set2 = getLinePoints(line2)
-
-    set1.retainAll(set2)
-    set1.remove(Point(0, 0))
-
-    return set1.toList()
-}
-
-private fun getLinePoints(line: Line): HashSet<Point> {
-    val set = HashSet<Point>()
-    for (x in min(line.start.x, line.end.x)..max(line.start.x, line.end.x)) {
-        for (y in min(line.start.y, line.end.y)..max(line.start.y, line.end.y)) {
-            set.add(Point(x, y))
-        }
-    }
-    return set
-}
-
-fun getWireLines(wire: String): List<Line> {
+private fun getWireLines(wire: String): List<Line> {
     var currentPoint = Point(0, 0)
     val lines = ArrayList<Line>()
     for (instruction in wire.split(",")) {
@@ -116,6 +85,52 @@ private fun getNextPoint(instruction: String, point: Point): Point {
     }
 }
 
+fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): List<Point> {
+
+    val intersections = HashSet<Point>()
+    for (l1 in lines1) {
+        for (l2 in lines2) {
+            intersections.addAll(getIntersection(l1, l2))
+        }
+    }
+    intersections.remove(Point(0, 0))
+    return intersections.toList()
+}
+
+fun getIntersection(line1: Line, line2: Line): Set<Point> {
+    if ((line1.isHorizontal() && line2.isHorizontal()) || (!line1.isHorizontal() && !line2.isHorizontal())) {
+        if (line1.getIntercept() != line2.getIntercept()) {
+            return emptySet()
+        }
+
+        val e = max(line1.getLowerBound(), line2.getLowerBound())
+        val f = min(line1.getUpperBound(), line2.getUpperBound())
+
+        if (e <= f) {
+            return if (line1.isHorizontal()) {
+                (e..f).map { Point(it, line1.start.y) }.toSet()
+            } else {
+                (e..f).map { Point(line1.start.x, it) }.toSet()
+            }
+        }
+    } else {
+        val horizontalLine = when (line1.isHorizontal()) {
+            true -> line1
+            false -> line2
+        }
+        val verticalLine = when (line1.isHorizontal()) {
+            true -> line2
+            false -> line1
+        }
+
+        val crossover = Point(verticalLine.getIntercept(), horizontalLine.getIntercept())
+        if (verticalLine.containsPoint(crossover) && horizontalLine.containsPoint(crossover)) {
+            return setOf(crossover)
+        }
+    }
+    return emptySet()
+}
+
 data class Line(
     val start: Point, val end: Point
 ) {
@@ -123,9 +138,39 @@ data class Line(
         return abs(start.x - end.x) + abs(start.y - end.y)
     }
 
+    fun isHorizontal(): Boolean {
+        return start.y == end.y
+    }
+
+    fun getIntercept(): Int {
+        return if (isHorizontal()) {
+            start.y
+        } else {
+            start.x
+        }
+    }
+
+    fun getLowerBound(): Int {
+        return if (isHorizontal()) {
+            min(start.x, end.x)
+        } else {
+            min(start.y, end.y)
+        }
+    }
+
+    fun getUpperBound(): Int {
+        return if (isHorizontal()) {
+            max(start.x, end.x)
+        } else {
+            max(start.y, end.y)
+        }
+    }
+
     fun containsPoint(point: Point): Boolean {
-        return ((start.x <= point.x && point.x <= end.x) || (end.x <= point.x && point.x <= start.x)) &&
-                ((start.y <= point.y && point.y <= end.y) || (end.y <= point.y && point.y <= start.y))
+        return when (this.isHorizontal()) {
+            true -> point.y == this.getIntercept() && point.x >= this.getLowerBound() && point.x <= this.getUpperBound()
+            false -> point.x == this.getIntercept() && point.y >= this.getLowerBound() && point.y <= this.getUpperBound()
+        }
     }
 }
 
