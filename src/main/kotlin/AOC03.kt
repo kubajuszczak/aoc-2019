@@ -2,6 +2,7 @@ import java.lang.IllegalArgumentException
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.system.measureTimeMillis
 
 fun main() {
 
@@ -13,30 +14,29 @@ fun main() {
 //    val wire1 = "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51"
 //    val wire2 = "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"
 
-    val wire1 = input[0]
-    val wire2 = input[1]
+    val lines1 = getWireLines(input[0])
+    val lines2 = getWireLines(input[1])
 
-    part1(wire1, wire2)
-    part2(wire1, wire2)
+    measureTimeMillis {
+        println(part1(lines1, lines2))
+    }.also { println("${it}ms") }
+
+    measureTimeMillis {
+        println(part2(lines1, lines2))
+    }.also { println("${it}ms") }
 
 }
 
-fun part1(wire1: String, wire2: String) {
-    val lines1 = getWireLines(wire1)
-    val lines2 = getWireLines(wire2)
-
+fun part1(lines1: List<Line>, lines2: List<Line>): Int? {
     val intersections = getAllIntersections(lines1, lines2)
-    val minDistance = intersections.map { it.getTaxicabMagnitude() }.min()
 
-    print(minDistance)
+    return intersections.map { it.getTaxicabMagnitude() }.min()
 }
 
-fun part2(wire1: String, wire2: String) {
-    val lines1 = getWireLines(wire1)
-    val lines2 = getWireLines(wire2)
+fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
     val intersections = getAllIntersections(lines1, lines2)
 
-    val minDistance = intersections.map {
+    return intersections.map {
         var sum = 0
         for (line in lines1) {
             if (line.containsPoint(it)) {
@@ -56,10 +56,7 @@ fun part2(wire1: String, wire2: String) {
         }
         sum
     }.min()
-
-    print(minDistance)
 }
-
 
 fun getAllIntersections(lines1: List<Line>, lines2: List<Line>): ArrayList<Point> {
 
