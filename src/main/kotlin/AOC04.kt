@@ -1,17 +1,29 @@
+import kotlin.system.measureTimeMillis
+
 fun main() {
 
-    val part1 = (240298..784956)
+    measureTimeMillis {
+        println(part1())
+    }.also { println("${it}ms") }
+
+    measureTimeMillis {
+        println(part2())
+    }.also { println("${it}ms") }
+
+}
+
+fun part1(): Int {
+    return (240298..784956)
         .filter { hasNonDecreasingDigits(it.toString()) }
         .filter { hasTwoAdjacentSameDigits(it.toString()) }
         .count()
-    println(part1)
+}
 
-    val part2 = (240298..784956)
+fun part2(): Int {
+    return (240298..784956)
         .filter { hasNonDecreasingDigits(it.toString()) }
         .filter { hasAGroupOfExactlyTwoAdjacentSameDigits(it.toString()) }
         .count()
-    println(part2)
-
 }
 
 fun hasNonDecreasingDigits(password: String): Boolean {
@@ -32,7 +44,7 @@ fun hasTwoAdjacentSameDigits(password: String): Boolean {
     return false
 }
 
-// run-length encoding derived
+// like run-length encoding but without saying what symbol is repeated
 fun hasAGroupOfExactlyTwoAdjacentSameDigits(password: String): Boolean {
     var currentRun = 1
     var rle = ""
