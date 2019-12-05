@@ -6,9 +6,18 @@ fun main() {
     measureTimeMillis {
         part1(input)
     }.also { println("${it}ms") }
+
+    measureTimeMillis {
+        part2(input)
+    }.also { println("${it}ms") }
 }
 
-private fun part1(input: List<Int>) {
-    val computer = IntComputer(0, input) { 1 }
+private fun part1(program: List<Int>) {
+    val computer = IntComputer(0, program) { 1 }
+    runProgram(computer)
+}
+
+private fun part2(program: List<Int>) {
+    val computer = IntComputer(0, program) { 5 }
     runProgram(computer)
 }

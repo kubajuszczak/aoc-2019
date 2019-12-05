@@ -40,7 +40,7 @@ class IntComputer(
 
         // execute
         when (val opcode = instruction.rem(100)) {
-            1 -> {
+            1 -> { // ADD
                 if (mode3 == 1) {
                     throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
                 }
@@ -68,7 +68,7 @@ class IntComputer(
                     write(pointer + 3, result), inputFunction
                 )
             }
-            2 -> {
+            2 -> { // MULT
                 if (mode3 == 1) {
                     throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
                 }
@@ -96,15 +96,120 @@ class IntComputer(
                     write(pointer + 3, result), inputFunction
                 )
             }
-            3 -> {
+            3 -> { //INPUT
                 val value = inputFunction()
                 println("INPUT: $value")
                 return IntComputer(pointer + 2, write(pointer + 1, value), inputFunction)
             }
-            4 -> {
-                val value = read(pointer + 1)
-                println("OUTPUT: $value")
+            4 -> { //OUTPUT
+                val argument1 = when (mode1) {
+                    0 ->
+                        read(pointer + 1)
+                    1 ->
+                        readImmediate(pointer + 1)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode1; $instruction at $pointer")
+                }
+                println("OUTPUT: $argument1")
                 return IntComputer(pointer + 2, memory, inputFunction)
+            }
+            5 -> { //JMP NON-ZERO
+                val argument1 = when (mode1) {
+                    0 ->
+                        read(pointer + 1)
+                    1 ->
+                        readImmediate(pointer + 1)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode1; $instruction at $pointer")
+                }
+                val argument2 = when (mode2) {
+                    0 ->
+                        read(pointer + 2)
+                    1 ->
+                        readImmediate(pointer + 2)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode2; $instruction at $pointer")
+                }
+                return if (argument1 != 0) {
+                    IntComputer(argument2, memory, inputFunction)
+                } else {
+                    IntComputer(pointer + 3, memory, inputFunction)
+                }
+            }
+            6 -> { //JMP ZERO
+                val argument1 = when (mode1) {
+                    0 ->
+                        read(pointer + 1)
+                    1 ->
+                        readImmediate(pointer + 1)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode1; $instruction at $pointer")
+                }
+                val argument2 = when (mode2) {
+                    0 ->
+                        read(pointer + 2)
+                    1 ->
+                        readImmediate(pointer + 2)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode2; $instruction at $pointer")
+                }
+                return if (argument1 == 0) {
+                    IntComputer(argument2, memory, inputFunction)
+                } else {
+                    IntComputer(pointer + 3, memory, inputFunction)
+                }
+            }
+            7 -> { //LESS THAN
+                if (mode3 == 1) {
+                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
+                }
+                val argument1 = when (mode1) {
+                    0 ->
+                        read(pointer + 1)
+                    1 ->
+                        readImmediate(pointer + 1)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode1; $instruction at $pointer")
+                }
+                val argument2 = when (mode2) {
+                    0 ->
+                        read(pointer + 2)
+                    1 ->
+                        readImmediate(pointer + 2)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode2; $instruction at $pointer")
+                }
+                return if (argument1 < argument2) {
+                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction)
+                } else {
+                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction)
+                }
+            }
+            8 -> { // EQUAL
+                if (mode3 == 1) {
+                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
+                }
+                val argument1 = when (mode1) {
+                    0 ->
+                        read(pointer + 1)
+                    1 ->
+                        readImmediate(pointer + 1)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode1; $instruction at $pointer")
+                }
+                val argument2 = when (mode2) {
+                    0 ->
+                        read(pointer + 2)
+                    1 ->
+                        readImmediate(pointer + 2)
+                    else ->
+                        throw InvalidInstructionException("Unknown parameter mode $mode2; $instruction at $pointer")
+                }
+                return if (argument1 == argument2) {
+                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction)
+                } else {
+                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction)
+                }
             }
             99 -> {
                 throw HaltException()
@@ -134,7 +239,7 @@ fun runProgram(computer: IntComputer, verbose: Boolean = false): Int {
     } catch (e: MemoryOverflowException) {
         println("Program pointer exceeded memory size")
         return -1
-    } catch (e: UnsupportedOpcodeException){
+    } catch (e: UnsupportedOpcodeException) {
         println(e.message)
         return -1
     }
