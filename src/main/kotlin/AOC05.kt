@@ -13,11 +13,11 @@ fun main() {
 }
 
 private fun part1(program: List<Int>) {
-    val computer = IntComputer(0, program) { 1 }
+    val computer = IntComputer(0, program, { 1 })
     runProgram(computer)
 }
 
 private fun part2(program: List<Int>) {
-    val computer = IntComputer(0, program) { 5 }
+    val computer = IntComputer(0, program, { 5 })
     runProgram(computer)
 }

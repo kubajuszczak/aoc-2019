@@ -3,7 +3,8 @@ import java.lang.Exception
 class IntComputer(
     private val pointer: Int,
     private val memory: List<Int>,
-    private val inputFunction: () -> (Int) = { 0 }
+    private val inputFunction: () -> (Int) = { 0 },
+    private val outputFunction: (Int) -> (Unit) = { println("OUTPUT: $it") }
 ) {
     private fun writeImmediate(address: Int, value: Int): List<Int> {
         val newMemory = memory.toMutableList()
@@ -34,7 +35,7 @@ class IntComputer(
         )
     }
 
-    private fun getParameter(mode: Int, value: Int) : Int {
+    private fun getParameter(mode: Int, value: Int): Int {
         return when (mode) {
             0 ->
                 read(value)
@@ -69,7 +70,7 @@ class IntComputer(
                 val result = argument1 + argument2
                 return IntComputer(
                     pointer + 4,
-                    write(pointer + 3, result), inputFunction
+                    write(pointer + 3, result), inputFunction, outputFunction
                 )
             }
             2 -> { // MUL
@@ -83,28 +84,27 @@ class IntComputer(
                 val result = argument1 * argument2
                 return IntComputer(
                     pointer + 4,
-                    write(pointer + 3, result), inputFunction
+                    write(pointer + 3, result), inputFunction, outputFunction
                 )
             }
             3 -> { //INPUT
                 val value = inputFunction()
-                println("INPUT: $value")
-                return IntComputer(pointer + 2, write(pointer + 1, value), inputFunction)
+                return IntComputer(pointer + 2, write(pointer + 1, value), inputFunction, outputFunction)
             }
             4 -> { //OUTPUT
                 val argument1 = getParameter(mode1, pointer + 1)
 
-                println("OUTPUT: $argument1")
-                return IntComputer(pointer + 2, memory, inputFunction)
+                outputFunction(argument1)
+                return IntComputer(pointer + 2, memory, inputFunction, outputFunction)
             }
             5 -> { //JMP NON-ZERO
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 != 0) {
-                    IntComputer(argument2, memory, inputFunction)
+                    IntComputer(argument2, memory, inputFunction, outputFunction)
                 } else {
-                    IntComputer(pointer + 3, memory, inputFunction)
+                    IntComputer(pointer + 3, memory, inputFunction, outputFunction)
                 }
             }
             6 -> { //JMP ZERO
@@ -112,9 +112,9 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 == 0) {
-                    IntComputer(argument2, memory, inputFunction)
+                    IntComputer(argument2, memory, inputFunction, outputFunction)
                 } else {
-                    IntComputer(pointer + 3, memory, inputFunction)
+                    IntComputer(pointer + 3, memory, inputFunction, outputFunction)
                 }
             }
             7 -> { //LESS THAN
@@ -126,9 +126,9 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 < argument2) {
-                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction)
+                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction, outputFunction)
                 } else {
-                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction)
+                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction, outputFunction)
                 }
             }
             8 -> { // EQUAL
@@ -140,9 +140,9 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 == argument2) {
-                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction)
+                    IntComputer(pointer + 4, write(pointer + 3, 1), inputFunction, outputFunction)
                 } else {
-                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction)
+                    IntComputer(pointer + 4, write(pointer + 3, 0), inputFunction, outputFunction)
                 }
             }
             99 -> {  //HALT
