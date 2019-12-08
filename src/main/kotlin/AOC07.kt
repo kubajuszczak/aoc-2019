@@ -27,24 +27,24 @@ private fun part1(program: List<Int>): Int? {
         val eInputs = listOf(permutation[4]).toMutableList()
 
         val a = aInputs.iterator()
-        val ampA = IntComputer(0, program, { a.next() }, { bInputs.add(it) })
-        runProgram(ampA)
+        val ampA = IntComputer(program, { a.next() }, { bInputs.add(it) })
+        runSync(ampA)
 
         val b = bInputs.iterator()
-        val ampB = IntComputer(0, program, { b.next() }, { cInputs.add(it) })
-        runProgram(ampB)
+        val ampB = IntComputer(program, { b.next() }, { cInputs.add(it) })
+        runSync(ampB)
 
         val c = cInputs.iterator()
-        val ampC = IntComputer(0, program, { c.next() }, { dInputs.add(it) })
-        runProgram(ampC)
+        val ampC = IntComputer(program, { c.next() }, { dInputs.add(it) })
+        runSync(ampC)
 
         val d = dInputs.iterator()
-        val ampD = IntComputer(0, program, { d.next() }, { eInputs.add(it) })
-        runProgram(ampD)
+        val ampD = IntComputer(program, { d.next() }, { eInputs.add(it) })
+        runSync(ampD)
 
         val e = eInputs.iterator()
-        val ampE = IntComputer(0, program, { e.next() }, { outputs.add(it) })
-        runProgram(ampE)
+        val ampE = IntComputer(program, { e.next() }, { outputs.add(it) })
+        runSync(ampE)
     }
 
     return outputs.max()
@@ -68,24 +68,24 @@ private fun part2(program: List<Int>): Int? {
 
         runBlocking {
             launch {
-                val ampA = IntComputer(0, program, input(a.iterator(), channelEA), output(channelAB))
-                runProgramSus(ampA)
+                val ampA = IntComputer(program, input(a.iterator(), channelEA), output(channelAB))
+                runAsync(ampA)
             }
             launch {
-                val ampB = IntComputer(0, program, input(b.iterator(), channelAB), output(channelBC))
-                runProgramSus(ampB)
+                val ampB = IntComputer(program, input(b.iterator(), channelAB), output(channelBC))
+                runAsync(ampB)
             }
             launch {
-                val ampC = IntComputer(0, program, input(c.iterator(), channelBC), output(channelCD))
-                runProgramSus(ampC)
+                val ampC = IntComputer(program, input(c.iterator(), channelBC), output(channelCD))
+                runAsync(ampC)
             }
             launch {
-                val ampD = IntComputer(0, program, input(d.iterator(), channelCD), output(channelDE))
-                runProgramSus(ampD)
+                val ampD = IntComputer(program, input(d.iterator(), channelCD), output(channelDE))
+                runAsync(ampD)
             }
             launch {
-                val ampE = IntComputer(0, program, input(e.iterator(), channelDE), output(channelEA))
-                runProgramSus(ampE)
+                val ampE = IntComputer(program, input(e.iterator(), channelDE), output(channelEA))
+                runAsync(ampE)
             }
         }
         runBlocking {
