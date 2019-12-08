@@ -1,3 +1,6 @@
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() {
@@ -7,9 +10,9 @@ fun main() {
         println(part1(input))
     }.also { println("${it}ms") }
 
-//    measureTimeMillis {
-//        println(part2(input))
-//    }.also { println("${it}ms") }
+    measureTimeMillis {
+        println(part2(input))
+    }.also { println("${it}ms") }
 }
 
 private fun part1(program: List<Int>): Int? {
@@ -47,9 +50,70 @@ private fun part1(program: List<Int>): Int? {
     return outputs.max()
 }
 
-private fun part2(program: List<Int>) {
-    val computer = IntComputer(0, program, { 5 })
-    runProgram(computer)
+private fun part2(program: List<Int>): Int? {
+    val outputs = ArrayList<Int>()
+
+    for (permutation in permute(listOf(5, 6, 7, 8, 9))) {
+        val a = listOf(permutation[0], 0)
+        val b = listOf(permutation[1])
+        val c = listOf(permutation[2])
+        val d = listOf(permutation[3])
+        val e = listOf(permutation[4])
+
+        val channelAB = Channel<Int>()
+        val channelBC = Channel<Int>()
+        val channelCD = Channel<Int>()
+        val channelDE = Channel<Int>()
+        val channelEA = Channel<Int>(1) // buffer of 1 to let the IntComputer finish, then we can read it at the end
+
+        runBlocking {
+            launch {
+                val ampA = IntComputer(0, program, input(a.iterator(), channelEA), output(channelAB))
+                runProgramSus(ampA)
+            }
+            launch {
+                val ampB = IntComputer(0, program, input(b.iterator(), channelAB), output(channelBC))
+                runProgramSus(ampB)
+            }
+            launch {
+                val ampC = IntComputer(0, program, input(c.iterator(), channelBC), output(channelCD))
+                runProgramSus(ampC)
+            }
+            launch {
+                val ampD = IntComputer(0, program, input(d.iterator(), channelCD), output(channelDE))
+                runProgramSus(ampD)
+            }
+            launch {
+                val ampE = IntComputer(0, program, input(e.iterator(), channelDE), output(channelEA))
+                runProgramSus(ampE)
+            }
+        }
+        runBlocking {
+            outputs.add(channelEA.receive())
+        }
+
+        channelAB.close()
+        channelBC.close()
+        channelCD.close()
+        channelDE.close()
+        channelEA.close()
+    }
+
+    return outputs.max()
+}
+
+fun input(iterator: Iterator<Int>, channel: Channel<Int>): suspend () -> Int {
+    return suspend {
+        if (iterator.hasNext()) {
+            iterator.next()
+        } else {
+            channel.receive()
+        }
+    }
+}
+
+fun output(channel: Channel<Int>): suspend (Int) -> Unit {
+    return { x -> channel.send(x) }
 }
 
 // https://rosettacode.org/wiki/Permutations

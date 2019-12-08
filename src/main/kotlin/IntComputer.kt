@@ -1,10 +1,11 @@
+import kotlinx.coroutines.runBlocking
 import java.lang.Exception
 
 class IntComputer(
     private val pointer: Int,
     private val memory: List<Int>,
-    private val inputFunction: () -> (Int) = { 0 },
-    private val outputFunction: (Int) -> (Unit) = { println("OUTPUT: $it") }
+    private val inputFunction: suspend () -> (Int) = { 0 },
+    private val outputFunction: suspend (Int) -> (Unit) = { println("OUTPUT: $it") }
 ) {
     private fun writeImmediate(address: Int, value: Int): List<Int> {
         val newMemory = memory.toMutableList()
@@ -46,7 +47,7 @@ class IntComputer(
         }
     }
 
-    fun runInstruction(): IntComputer {
+    suspend fun runInstruction(): IntComputer {
         if (pointer >= memory.size) {
             throw MemoryOverflowException()
         }
@@ -160,6 +161,10 @@ class IntComputer(
 }
 
 fun runProgram(computer: IntComputer, verbose: Boolean = false): Int {
+    return runBlocking { return@runBlocking runProgramSus(computer, verbose) }
+}
+
+suspend fun runProgramSus(computer: IntComputer, verbose: Boolean = false): Int {
     var c = computer
     if (verbose) println(c)
 
