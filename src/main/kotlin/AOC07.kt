@@ -16,43 +16,21 @@ fun main() {
 }
 
 private fun part1(program: List<Int>): Int? {
-
     val outputs = ArrayList<Int>()
 
     for (permutation in permutations(listOf(0, 1, 2, 3, 4))) {
-        val a = listOf(permutation[0], 0)
-        val b = listOf(permutation[1])
-        val c = listOf(permutation[2])
-        val d = listOf(permutation[3])
-        val e = listOf(permutation[4])
+        val channels = (0..4).map { Channel<Int>(Channel.UNLIMITED) }
+        val outputChannel = Channel<Int>(Channel.UNLIMITED)
 
         runBlocking {
-            val inputChannel = Channel<Int>(Channel.UNLIMITED)
-            val outputChannel = Channel<Int>(Channel.UNLIMITED)
+            channels.forEachIndexed { index, channel -> channel.send(permutation[index]) }
+            channels[0].send(0)
 
-            val ampA = IntComputer(program, inputChannel, outputChannel)
-            a.forEach { inputChannel.send(it) }
-            runSync(ampA)
-
-            val ampB = IntComputer(program, inputChannel, outputChannel)
-            b.forEach { inputChannel.send(it) }
-            inputChannel.send(outputChannel.receive())
-            runSync(ampB)
-
-            val ampC = IntComputer(program, inputChannel, outputChannel)
-            c.forEach { inputChannel.send(it) }
-            inputChannel.send(outputChannel.receive())
-            runSync(ampC)
-
-            val ampD = IntComputer(program, inputChannel, outputChannel)
-            d.forEach { inputChannel.send(it) }
-            inputChannel.send(outputChannel.receive())
-            runSync(ampD)
-
-            val ampE = IntComputer(program, inputChannel, outputChannel)
-            e.forEach { inputChannel.send(it) }
-            inputChannel.send(outputChannel.receive())
-            runSync(ampE)
+            runSync(IntComputer(program, channels[0], channels[1]))
+            runSync(IntComputer(program, channels[1], channels[2]))
+            runSync(IntComputer(program, channels[2], channels[3]))
+            runSync(IntComputer(program, channels[3], channels[4]))
+            runSync(IntComputer(program, channels[4], outputChannel))
 
             outputs.add(outputChannel.receive())
         }
@@ -65,48 +43,21 @@ private fun part2(program: List<Int>): Int? {
     val outputs = ArrayList<Int>()
 
     for (permutation in permutations(listOf(5, 6, 7, 8, 9))) {
-        val a = listOf(permutation[0], 0)
-        val b = listOf(permutation[1])
-        val c = listOf(permutation[2])
-        val d = listOf(permutation[3])
-        val e = listOf(permutation[4])
-
-        val channelA = Channel<Int>(Channel.UNLIMITED)
-        val channelB = Channel<Int>(Channel.UNLIMITED)
-        val channelC = Channel<Int>(Channel.UNLIMITED)
-        val channelD = Channel<Int>(Channel.UNLIMITED)
-        val channelE = Channel<Int>(Channel.UNLIMITED)
+        val channels = (0..4).map { Channel<Int>(Channel.UNLIMITED) }
 
         runBlocking {
-            a.forEach { channelA.send(it) }
-            b.forEach { channelB.send(it) }
-            c.forEach { channelC.send(it) }
-            d.forEach { channelD.send(it) }
-            e.forEach { channelE.send(it) }
+            channels.forEachIndexed { index, channel -> channel.send(permutation[index]) }
+            channels[0].send(0)
 
-            launch {
-                val ampA = IntComputer(program, channelA, channelB)
-                runAsync(ampA)
-            }
-            launch {
-                val ampB = IntComputer(program, channelB, channelC)
-                runAsync(ampB)
-            }
-            launch {
-                val ampC = IntComputer(program, channelC, channelD)
-                runAsync(ampC)
-            }
-            launch {
-                val ampD = IntComputer(program, channelD, channelE)
-                runAsync(ampD)
-            }
-            launch {
-                val ampE = IntComputer(program, channelE, channelA)
-                runAsync(ampE)
-            }
+            launch { runAsync(IntComputer(program, channels[0], channels[1])) }
+            launch { runAsync(IntComputer(program, channels[1], channels[2])) }
+            launch { runAsync(IntComputer(program, channels[2], channels[3])) }
+            launch { runAsync(IntComputer(program, channels[3], channels[4])) }
+            launch { runAsync(IntComputer(program, channels[4], channels[0])) }
         }
+
         runBlocking {
-            outputs.add(channelA.receive())
+            outputs.add(channels[0].receive())
         }
     }
 
