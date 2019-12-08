@@ -1,10 +1,13 @@
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.runBlocking
 import java.lang.Exception
 
 class IntComputer(
     val memory: List<Int>,
-    private val inputFunction: suspend () -> (Int) = { 0 },
-    private val outputFunction: suspend (Int) -> (Unit) = { println("OUTPUT: $it") },
+    private val inputChannel: ReceiveChannel<Int> = Channel(),
+    private val outputChannel: SendChannel<Int> = Channel(),
     private val pointer: Int = 0
 ) {
 
@@ -43,6 +46,10 @@ class IntComputer(
         }
     }
 
+    private fun newState(memory: List<Int>, pointer: Int): IntComputer {
+        return IntComputer(memory, inputChannel, outputChannel, pointer)
+    }
+
     suspend fun runInstruction(): IntComputer {
         if (pointer >= memory.size) {
             throw MemoryOverflowException()
@@ -65,10 +72,9 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val result = argument1 + argument2
-                return IntComputer(
-                    write(pointer + 3, result), inputFunction, outputFunction,
-                    pointer + 4
-                )
+                val newMemory = write(pointer + 3, result)
+
+                return newState(newMemory, pointer + 4)
             }
             2 -> { // MUL
                 if (mode3 == 1) {
@@ -79,29 +85,31 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val result = argument1 * argument2
-                return IntComputer(
-                    write(pointer + 3, result), inputFunction, outputFunction,
-                    pointer + 4
-                )
+
+                val newMemory = write(pointer + 3, result)
+
+                return newState(newMemory, pointer + 4)
             }
             3 -> { //INPUT
-                val value = inputFunction()
-                return IntComputer(write(pointer + 1, value), inputFunction, outputFunction, pointer + 2)
+                val value = inputChannel.receive()
+
+                val newMemory = write(pointer + 1, value)
+                return newState(newMemory, pointer + 2)
             }
             4 -> { //OUTPUT
                 val argument1 = getParameter(mode1, pointer + 1)
 
-                outputFunction(argument1)
-                return IntComputer(memory, inputFunction, outputFunction, pointer + 2)
+                outputChannel.send(argument1)
+                return newState(memory, pointer + 2)
             }
             5 -> { //JMP NON-ZERO
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 != 0) {
-                    IntComputer(memory, inputFunction, outputFunction, argument2)
+                    newState(memory, argument2)
                 } else {
-                    IntComputer(memory, inputFunction, outputFunction, pointer + 3)
+                    newState(memory, pointer + 3)
                 }
             }
             6 -> { //JMP ZERO
@@ -109,9 +117,9 @@ class IntComputer(
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 return if (argument1 == 0) {
-                    IntComputer(memory, inputFunction, outputFunction, argument2)
+                    newState(memory, argument2)
                 } else {
-                    IntComputer(memory, inputFunction, outputFunction, pointer + 3)
+                    newState(memory, pointer + 3)
                 }
             }
             7 -> { //LESS THAN
@@ -122,11 +130,12 @@ class IntComputer(
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
-                return if (argument1 < argument2) {
-                    IntComputer(write(pointer + 3, 1), inputFunction, outputFunction, pointer + 4)
-                } else {
-                    IntComputer(write(pointer + 3, 0), inputFunction, outputFunction, pointer + 4)
+                val newMemory = when (argument1 < argument2) {
+                    true -> write(pointer + 3, 1)
+                    false -> write(pointer + 3, 0)
                 }
+
+                return newState(newMemory, pointer + 4)
             }
             8 -> { // EQUAL
                 if (mode3 == 1) {
@@ -136,11 +145,12 @@ class IntComputer(
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
-                return if (argument1 == argument2) {
-                    IntComputer(write(pointer + 3, 1), inputFunction, outputFunction, pointer + 4)
-                } else {
-                    IntComputer(write(pointer + 3, 0), inputFunction, outputFunction, pointer + 4)
+                val newMemory = when (argument1 == argument2) {
+                    true -> write(pointer + 3, 1)
+                    false -> write(pointer + 3, 0)
                 }
+
+                return newState(newMemory, pointer + 4)
             }
             99 -> {  //HALT
                 throw HaltException()

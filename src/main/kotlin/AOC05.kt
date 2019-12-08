@@ -1,3 +1,5 @@
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() {
@@ -13,11 +15,34 @@ fun main() {
 }
 
 private fun part1(program: List<Int>) {
-    val computer = IntComputer(program, { 1 })
-    runSync(computer)
+    runBlocking {
+        val inputChannel = Channel<Int>(Channel.UNLIMITED)
+        val outputChannel = Channel<Int>(Channel.UNLIMITED)
+        inputChannel.send(1)
+        inputChannel.close()
+
+        val computer = IntComputer(program, inputChannel, outputChannel)
+        runSync(computer)
+        outputChannel.close()
+
+        for (output in outputChannel){
+            println("OUTPUT: $output")
+        }
+    }
 }
 
 private fun part2(program: List<Int>) {
-    val computer = IntComputer(program, { 5 })
-    runSync(computer)
+    runBlocking {
+        val inputChannel = Channel<Int>(Channel.UNLIMITED)
+        val outputChannel = Channel<Int>(Channel.UNLIMITED)
+        inputChannel.send(5)
+
+        val computer = IntComputer(program, inputChannel, outputChannel)
+        runSync(computer)
+        outputChannel.close()
+
+        for (output in outputChannel){
+            println("OUTPUT: $output")
+        }
+    }
 }
