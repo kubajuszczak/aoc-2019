@@ -1,28 +1,42 @@
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.runBlocking
-import java.lang.Exception
 
 class IntComputer(
-    val memory: List<Int>,
-    private val inputChannel: ReceiveChannel<Int> = Channel(),
-    private val outputChannel: SendChannel<Int> = Channel(),
-    private val pointer: Int = 0
+    val memory: List<Long> = (0..9000).map { 0L },
+    private val inputChannel: ReceiveChannel<Long> = Channel(),
+    private val outputChannel: SendChannel<Long> = Channel(),
+    private val pointer: Int = 0,
+    private val relativeBase: Int = 0
 ) {
 
-    private fun readImmediate(address: Int): Int {
+    fun loadProgram(program: List<Long>): IntComputer {
+        val newMemory = program + memory.drop(program.size)
+        return IntComputer(newMemory, inputChannel, outputChannel, pointer, relativeBase)
+    }
+
+    private fun readImmediate(address: Int): Long {
         return memory[address]
     }
 
-    private fun read(addressPointer: Int): Int {
-        return readImmediate(readImmediate(addressPointer))
+    private fun read(addressPointer: Int): Long {
+        return readImmediate(readImmediate(addressPointer).toInt())
     }
 
-    private fun write(addressPointer: Int, value: Int): List<Int> {
-        val address = readImmediate(addressPointer)
+    private fun readRelative(addressPointer: Int): Long {
+        return readImmediate(readImmediate(addressPointer).toInt() + relativeBase)
+    }
+
+    private fun write(addressPointer: Int, value: Long, mode: Int): List<Long> {
+        val address = when (mode) {
+            0 -> readImmediate(addressPointer)
+            1 -> throw InvalidInstructionException("Immediate mode for write address parameter; ${readImmediate(pointer)} at $pointer")
+            2 -> relativeBase + readImmediate(addressPointer)
+            else -> throw InvalidInstructionException("Unknown parameter mode $mode; ${readImmediate(pointer)} at $pointer")
+        }
+
         val newMemory = memory.toMutableList()
-        newMemory[address] = value
+        newMemory[address.toInt()] = value
         return newMemory
     }
 
@@ -37,17 +51,22 @@ class IntComputer(
         )
     }
 
-    private fun getParameter(mode: Int, value: Int): Int {
+    private fun getParameter(mode: Int, value: Int): Long {
         return when (mode) {
             0 -> read(value)
             1 -> readImmediate(value)
+            2 -> readRelative(value)
             else ->
                 throw InvalidInstructionException("Unknown parameter mode $mode; ${readImmediate(pointer)} at $pointer")
         }
     }
 
-    private fun newState(memory: List<Int>, pointer: Int): IntComputer {
-        return IntComputer(memory, inputChannel, outputChannel, pointer)
+    private fun newState(memory: List<Long>, pointer: Int): IntComputer {
+        return IntComputer(memory, inputChannel, outputChannel, pointer, relativeBase)
+    }
+
+    private fun newState(memory: List<Long>, pointer: Int, relativeBase: Int): IntComputer {
+        return IntComputer(memory, inputChannel, outputChannel, pointer, relativeBase)
     }
 
     suspend fun runInstruction(): IntComputer {
@@ -59,55 +78,48 @@ class IntComputer(
         val instruction = readImmediate(pointer)
 
         // decode
-        val (mode1, mode2, mode3, opcode) = decodeInstruction(instruction)
+        val (mode1, mode2, mode3, opcode) = decodeInstruction(instruction.toInt())
 
         // execute
         when (opcode) {
             1 -> { // ADD
-                if (mode3 == 1) {
-                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
-                }
-
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val result = argument1 + argument2
-                val newMemory = write(pointer + 3, result)
+                val newMemory = write(pointer + 3, result, mode3)
 
                 return newState(newMemory, pointer + 4)
             }
             2 -> { // MUL
-                if (mode3 == 1) {
-                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
-                }
-
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val result = argument1 * argument2
-
-                val newMemory = write(pointer + 3, result)
+                val newMemory = write(pointer + 3, result, mode3)
 
                 return newState(newMemory, pointer + 4)
             }
             3 -> { //INPUT
                 val value = inputChannel.receive()
 
-                val newMemory = write(pointer + 1, value)
+                val newMemory = write(pointer + 1, value, mode1)
+
                 return newState(newMemory, pointer + 2)
             }
             4 -> { //OUTPUT
                 val argument1 = getParameter(mode1, pointer + 1)
 
                 outputChannel.send(argument1)
+
                 return newState(memory, pointer + 2)
             }
             5 -> { //JMP NON-ZERO
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
-                return if (argument1 != 0) {
-                    newState(memory, argument2)
+                return if (argument1 != 0L) {
+                    newState(memory, argument2.toInt())
                 } else {
                     newState(memory, pointer + 3)
                 }
@@ -116,41 +128,38 @@ class IntComputer(
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
-                return if (argument1 == 0) {
-                    newState(memory, argument2)
+                return if (argument1 == 0L) {
+                    newState(memory, argument2.toInt())
                 } else {
                     newState(memory, pointer + 3)
                 }
             }
             7 -> { //LESS THAN
-                if (mode3 == 1) {
-                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
-                }
-
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val newMemory = when (argument1 < argument2) {
-                    true -> write(pointer + 3, 1)
-                    false -> write(pointer + 3, 0)
+                    true -> write(pointer + 3, 1, mode3)
+                    false -> write(pointer + 3, 0, mode3)
                 }
 
                 return newState(newMemory, pointer + 4)
             }
             8 -> { // EQUAL
-                if (mode3 == 1) {
-                    throw InvalidInstructionException("Immediate mode for write address parameter; $instruction at $pointer")
-                }
-
                 val argument1 = getParameter(mode1, pointer + 1)
                 val argument2 = getParameter(mode2, pointer + 2)
 
                 val newMemory = when (argument1 == argument2) {
-                    true -> write(pointer + 3, 1)
-                    false -> write(pointer + 3, 0)
+                    true -> write(pointer + 3, 1, mode3)
+                    false -> write(pointer + 3, 0, mode3)
                 }
 
                 return newState(newMemory, pointer + 4)
+            }
+            9 -> { // REL BASE
+                val argument1 = getParameter(mode1, pointer + 1)
+
+                return newState(memory, pointer + 2, relativeBase + argument1.toInt())
             }
             99 -> {  //HALT
                 throw HaltException()
@@ -166,8 +175,8 @@ class IntComputer(
     }
 }
 
-suspend fun runAsync(computer: IntComputer): IntComputer {
-    var c = computer
+suspend fun runAsync(computer: IntComputer, program: List<Long>): IntComputer {
+    var c = computer.loadProgram(program)
 
     try {
         while (true) {

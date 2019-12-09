@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() {
-    val input = getInput("input07.txt").readText().split(",").map { it.toInt() }
+    val input = getInput("input07.txt").readText().split(",").map { it.toLong() }
 
     measureTimeMillis {
         println(part1(input))
@@ -15,22 +15,22 @@ fun main() {
     }.also { println("${it}ms") }
 }
 
-private fun part1(program: List<Int>): Int? {
-    val outputs = ArrayList<Int>()
+private fun part1(program: List<Long>): Long? {
+    val outputs = ArrayList<Long>()
 
     for (permutation in permutations(listOf(0, 1, 2, 3, 4))) {
-        val channels = (0..4).map { Channel<Int>(Channel.UNLIMITED) }
-        val outputChannel = Channel<Int>(Channel.UNLIMITED)
+        val channels = (0..4).map { Channel<Long>(Channel.UNLIMITED) }
+        val outputChannel = Channel<Long>(Channel.UNLIMITED)
 
         runBlocking {
-            channels.forEachIndexed { index, channel -> channel.send(permutation[index]) }
+            channels.forEachIndexed { index, channel -> channel.send(permutation[index].toLong()) }
             channels[0].send(0)
 
-            runAsync(IntComputer(program, channels[0], channels[1]))
-            runAsync(IntComputer(program, channels[1], channels[2]))
-            runAsync(IntComputer(program, channels[2], channels[3]))
-            runAsync(IntComputer(program, channels[3], channels[4]))
-            runAsync(IntComputer(program, channels[4], outputChannel))
+            runAsync(IntComputer(inputChannel = channels[0], outputChannel = channels[1]), program)
+            runAsync(IntComputer(inputChannel = channels[1], outputChannel = channels[2]), program)
+            runAsync(IntComputer(inputChannel = channels[2], outputChannel = channels[3]), program)
+            runAsync(IntComputer(inputChannel = channels[3], outputChannel = channels[4]), program)
+            runAsync(IntComputer(inputChannel = channels[4], outputChannel = outputChannel), program)
 
             outputs.add(outputChannel.receive())
         }
@@ -39,21 +39,21 @@ private fun part1(program: List<Int>): Int? {
     return outputs.max()
 }
 
-private fun part2(program: List<Int>): Int? {
-    val outputs = ArrayList<Int>()
+private fun part2(program: List<Long>): Long? {
+    val outputs = ArrayList<Long>()
 
     for (permutation in permutations(listOf(5, 6, 7, 8, 9))) {
-        val channels = (0..4).map { Channel<Int>(Channel.UNLIMITED) }
+        val channels = (0..4).map { Channel<Long>(Channel.UNLIMITED) }
 
         runBlocking {
-            channels.forEachIndexed { index, channel -> channel.send(permutation[index]) }
+            channels.forEachIndexed { index, channel -> channel.send(permutation[index].toLong()) }
             channels[0].send(0)
 
-            launch { runAsync(IntComputer(program, channels[0], channels[1])) }
-            launch { runAsync(IntComputer(program, channels[1], channels[2])) }
-            launch { runAsync(IntComputer(program, channels[2], channels[3])) }
-            launch { runAsync(IntComputer(program, channels[3], channels[4])) }
-            launch { runAsync(IntComputer(program, channels[4], channels[0])) }
+            launch { runAsync(IntComputer(inputChannel = channels[0], outputChannel = channels[1]), program) }
+            launch { runAsync(IntComputer(inputChannel = channels[1], outputChannel = channels[2]), program) }
+            launch { runAsync(IntComputer(inputChannel = channels[2], outputChannel = channels[3]), program) }
+            launch { runAsync(IntComputer(inputChannel = channels[3], outputChannel = channels[4]), program) }
+            launch { runAsync(IntComputer(inputChannel = channels[4], outputChannel = channels[0]), program) }
         }
 
         runBlocking {
