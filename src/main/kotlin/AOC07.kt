@@ -26,11 +26,11 @@ private fun part1(program: List<Int>): Int? {
             channels.forEachIndexed { index, channel -> channel.send(permutation[index]) }
             channels[0].send(0)
 
-            runSync(IntComputer(program, channels[0], channels[1]))
-            runSync(IntComputer(program, channels[1], channels[2]))
-            runSync(IntComputer(program, channels[2], channels[3]))
-            runSync(IntComputer(program, channels[3], channels[4]))
-            runSync(IntComputer(program, channels[4], outputChannel))
+            runAsync(IntComputer(program, channels[0], channels[1]))
+            runAsync(IntComputer(program, channels[1], channels[2]))
+            runAsync(IntComputer(program, channels[2], channels[3]))
+            runAsync(IntComputer(program, channels[3], channels[4]))
+            runAsync(IntComputer(program, channels[4], outputChannel))
 
             outputs.add(outputChannel.receive())
         }

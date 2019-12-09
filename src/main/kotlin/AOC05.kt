@@ -22,7 +22,7 @@ private fun part1(program: List<Int>) {
         inputChannel.close()
 
         val computer = IntComputer(program, inputChannel, outputChannel)
-        runSync(computer)
+        runAsync(computer)
         outputChannel.close()
 
         for (output in outputChannel){
@@ -38,7 +38,7 @@ private fun part2(program: List<Int>) {
         inputChannel.send(5)
 
         val computer = IntComputer(program, inputChannel, outputChannel)
-        runSync(computer)
+        runAsync(computer)
         outputChannel.close()
 
         for (output in outputChannel){

@@ -1,3 +1,4 @@
+import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() {
@@ -12,16 +13,20 @@ fun main() {
     }.also { println("${it}ms") }
 }
 
-private fun part1(program: List<Int>): Int {
-    return runSync(modifiedProgram(program, 12, 2)).memory[0]
+private fun part1(program: List<Int>): Int = runBlocking {
+    val result = runAsync(modifiedProgram(program, 12, 2))
+    return@runBlocking result.memory[0]
 }
 
 private fun part2(program: List<Int>): List<Int> {
     val list = ArrayList<Int>()
     for (noun in 0..99) {
         for (verb in 0..99) {
-            if (runSync(modifiedProgram(program, noun, verb)).memory[0] == 19690720) {
-                list.add(100 * noun + verb)
+            runBlocking {
+                val result = runAsync(modifiedProgram(program, noun, verb))
+                if (result.memory[0] == 19690720) {
+                    list.add(100 * noun + verb)
+                }
             }
         }
     }

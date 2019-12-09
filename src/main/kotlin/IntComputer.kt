@@ -166,10 +166,6 @@ class IntComputer(
     }
 }
 
-fun runSync(computer: IntComputer): IntComputer = runBlocking {
-    return@runBlocking runAsync(computer)
-}
-
 suspend fun runAsync(computer: IntComputer): IntComputer {
     var c = computer
 
