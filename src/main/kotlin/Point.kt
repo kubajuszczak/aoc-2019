@@ -16,7 +16,7 @@ data class Point(
             (b.y.toDouble() - this.y.toDouble()).pow(2))
     }
 
-    // angle in radians from x-axis anticlockwise
+    // angle in radians from positive x-axis anticlockwise
     fun getPolarAngle(b: Point): Double {
         val dx = (b.x - this.x)
         val dy = (b.y - this.y)
@@ -48,6 +48,7 @@ data class Point(
         }
     }
 
+    // bearing: 0 north, 90 east, 180 south, 270 west
     fun getBearing(b: Point): Double {
         return (1.25 - getPolarAngle(b) / (2 * PI)) * 360 % 360
     }
