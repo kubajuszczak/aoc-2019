@@ -7,8 +7,8 @@ import kotlin.math.pow
 data class Point(
     val x: Int, val y: Int
 ) {
-    fun getTaxicabMagnitude(): Int {
-        return abs(this.x) + abs(this.y)
+    fun getManhattanDistance(b: Point): Int {
+        return abs(b.x - this.x) + abs(b.y - this.y)
     }
 
     fun getCartesianDistance(b: Point): Double {
@@ -16,8 +16,8 @@ data class Point(
             (b.y.toDouble() - this.y.toDouble()).pow(2))
     }
 
-    fun getDirection(b: Point): Double {
-        // this is flipped upside down possibly (but it didn't matter for part 1)
+    // angle in radians from x-axis anticlockwise
+    fun getPolarAngle(b: Point): Double {
         val dx = (b.x - this.x)
         val dy = (b.y - this.y)
 
@@ -49,6 +49,6 @@ data class Point(
     }
 
     fun getBearing(b: Point): Double {
-        return (1.25 + getDirection(b) / (2 * PI)) * 360 % 360
+        return (1.25 - getPolarAngle(b) / (2 * PI)) * 360 % 360
     }
 }

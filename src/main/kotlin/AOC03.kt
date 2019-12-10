@@ -30,7 +30,8 @@ fun main() {
 private fun part1(lines1: List<Line>, lines2: List<Line>): Int? {
     val intersections = getAllIntersections(lines1, lines2)
 
-    return intersections.map { it.getTaxicabMagnitude() }.min()
+    val origin = Point(0,0)
+    return intersections.map { origin.getManhattanDistance(it) }.min()
 }
 
 private fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
