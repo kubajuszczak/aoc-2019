@@ -173,11 +173,3 @@ data class Line(
         }
     }
 }
-
-data class Point(
-    val x: Int, val y: Int
-) {
-    fun getTaxicabMagnitude(): Int {
-        return abs(this.x) + abs(this.y)
-    }
-}
