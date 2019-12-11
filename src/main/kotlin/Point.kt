@@ -12,7 +12,15 @@ data class Point(
         return Point(this.x - b.x, this.y - b.y)
     }
 
-    fun getManhattanDistance(b: Point): Int {
+    operator fun times(multiple: Int): Point {
+        return Point(multiple * x, multiple * y)
+    }
+
+    fun getManhattanDistance(): Int {
+        return this.getManhattanDistance(ORIGIN)
+    }
+
+    private fun getManhattanDistance(b: Point): Int {
         return abs(b.x - this.x) + abs(b.y - this.y)
     }
 
@@ -42,4 +50,11 @@ data class Point(
         return Point(this.y, -this.x)
     }
 
+    companion object {
+        val UP = Point(0, 1)
+        val DOWN = Point(0, -1)
+        val LEFT = Point(-1, 0)
+        val RIGHT = Point(1, 0)
+        val ORIGIN = Point(0, 0)
+    }
 }

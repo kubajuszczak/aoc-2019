@@ -24,8 +24,7 @@ class AOC03 {
         fun part1(lines1: List<Line>, lines2: List<Line>): Int? {
             val intersections = getAllIntersections(lines1, lines2)
 
-            val origin = Point(0, 0)
-            return intersections.map { origin.getManhattanDistance(it) }.min()
+            return intersections.map { it.getManhattanDistance() }.min()
         }
 
         fun part2(lines1: List<Line>, lines2: List<Line>): Int? {
@@ -54,7 +53,7 @@ class AOC03 {
         }
 
         fun getWireLines(wire: String): List<Line> {
-            var currentPoint = Point(0, 0)
+            var currentPoint = Point.ORIGIN
             val lines = ArrayList<Line>()
             for (instruction in wire.split(",")) {
                 val nextPoint = getNextPoint(instruction, currentPoint)
@@ -67,16 +66,11 @@ class AOC03 {
         private fun getNextPoint(instruction: String, point: Point): Point {
             val magnitude = instruction.substring(1).toInt()
             return when (instruction[0]) {
-                'R' ->
-                    Point(point.x + magnitude, point.y)
-                'L' ->
-                    Point(point.x - magnitude, point.y)
-                'U' ->
-                    Point(point.x, point.y + magnitude)
-                'D' ->
-                    Point(point.x, point.y - magnitude)
-                else ->
-                    throw IllegalArgumentException("Unknown instruction ${instruction[0]}")
+                'R' -> point + (Point.RIGHT * magnitude)
+                'L' -> point + (Point.LEFT * magnitude)
+                'U' -> point + (Point.UP * magnitude)
+                'D' -> point + (Point.DOWN * magnitude)
+                else -> throw IllegalArgumentException("Unknown instruction ${instruction[0]}")
             }
         }
 
@@ -88,12 +82,12 @@ class AOC03 {
                     intersections.addAll(getIntersectionPoints(l1, l2))
                 }
             }
-            intersections.remove(Point(0, 0))
+            intersections.remove(Point.ORIGIN)
             return intersections.toList()
         }
 
         private fun getIntersectionPoints(line1: Line, line2: Line): Set<Point> {
-            if ((line1.isHorizontal() && line2.isHorizontal()) || (!line1.isHorizontal() && !line2.isHorizontal())) {
+            if (line1.isHorizontal() == line2.isHorizontal()) {
                 if (line1.getIntercept() != line2.getIntercept()) {
                     return emptySet()
                 }

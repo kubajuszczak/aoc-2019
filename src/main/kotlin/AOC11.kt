@@ -28,7 +28,7 @@ class AOC11 {
 
         @ExperimentalCoroutinesApi
         fun part2(program: List<Long>) {
-            val panels = runPaintMachine(program, mapOf(Pair(Point(0, 0), 1L)))
+            val panels = runPaintMachine(program, mapOf(Pair(Point.ORIGIN, 1L)))
             printPointMap(panels)
         }
 
@@ -39,8 +39,8 @@ class AOC11 {
             val c = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
 
             val panels = initialPanels.toMutableMap()
-            var location = Point(0, 0)
-            var direction = Point(0, 1)
+            var location = Point.ORIGIN
+            var direction = Point.UP
 
             runBlocking {
                 launch {
