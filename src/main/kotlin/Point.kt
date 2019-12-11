@@ -1,55 +1,45 @@
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.atan
-import kotlin.math.sqrt
-import kotlin.math.pow
+import kotlin.math.*
 
 data class Point(
     val x: Int, val y: Int
 ) {
+
+    operator fun plus(b: Point): Point {
+        return Point(this.x + b.x, this.y + b.y)
+    }
+
+    operator fun minus(b: Point): Point {
+        return Point(this.x - b.x, this.y - b.y)
+    }
+
     fun getManhattanDistance(b: Point): Int {
         return abs(b.x - this.x) + abs(b.y - this.y)
     }
 
     fun getCartesianDistance(b: Point): Double {
-        return sqrt((b.x.toDouble() - this.x.toDouble()).pow(2) +
-            (b.y.toDouble() - this.y.toDouble()).pow(2))
+        val (dx, dy) = b - this
+        return hypot(dx.toDouble(), dy.toDouble())
     }
 
-    // angle in radians from positive x-axis anticlockwise
+    // angle in radians from positive x-axis
     fun getPolarAngle(b: Point): Double {
-        val dx = (b.x - this.x)
-        val dy = (b.y - this.y)
+        val (dx, dy) = b - this
 
-        if (dx == 0 && dy == 0) {
-            return 0.0
-        } else if (dx == 0 && dy > 0) {
-            return PI / 2
-        } else if (dx == 0 && dy < 0) {
-            return 1.5 * PI
-        } else if (dy == 0 && dx > 0) {
-            return 0.0
-        } else if (dy == 0 && dx < 0) {
-            return PI
-        }
-
-        val tan = abs(dy.toDouble() / dx.toDouble())
-
-        return if (b == this) {
-            0.0
-        } else if (dx > 0 && dy > 0) {
-            return atan(tan)
-        } else if (dx < 0 && dy > 0) {
-            return PI - atan(tan)
-        } else if (dx < 0 && dy < 0) {
-            return PI + atan(tan)
-        } else {
-            return 2 * PI - atan(tan)
-        }
+        return atan2(dy.toDouble(), dx.toDouble())
     }
 
     // bearing: 0 north, 90 east, 180 south, 270 west
     fun getBearing(b: Point): Double {
         return (1.25 - getPolarAngle(b) / (2 * PI)) * 360 % 360
     }
+
+    // Matrix rotation for 2D vector
+    fun rotateAnticlockwise90(): Point {
+        return Point(-this.y, this.x)
+    }
+
+    fun rotateClockwise90(): Point {
+        return Point(this.y, -this.x)
+    }
+
 }

@@ -39,8 +39,8 @@ class AOC11 {
             val c = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
 
             val panels = initialPanels.toMutableMap()
-            var currentLocation = Point(0, 0)
-            var facing = Facing.UP
+            var location = Point(0, 0)
+            var direction = Point(0, 1)
 
             runBlocking {
                 launch {
@@ -50,58 +50,23 @@ class AOC11 {
 
                 launch {
                     while (!inputChannel.isClosedForSend) {
-                        if (panels.containsKey(currentLocation)) {
-                            inputChannel.send(panels[currentLocation]!!)
-                        } else {
-                            inputChannel.send(0L)
-                        }
+                        inputChannel.send(panels[location] ?: 0L)
 
                         val paint = outputChannel.receive()
-                        panels[currentLocation] = paint
+                        panels[location] = paint
 
                         val moveInput = outputChannel.receive()
-                        facing = getNextFacing(facing, moveInput)
-                        currentLocation = getNextLocation(currentLocation, facing)
+                        direction = when (moveInput) {
+                            0L -> direction.rotateAnticlockwise90()
+                            1L -> direction.rotateClockwise90()
+                            else -> throw IllegalArgumentException("Invalid input $moveInput")
+                        }
+                        location += direction
                     }
                 }
 
             }
             return panels
-        }
-
-        private fun getNextFacing(currentFacing: Facing, moveInput: Long): Facing {
-            return when (currentFacing) {
-                Facing.UP -> when (moveInput) {
-                    0L -> Facing.LEFT
-                    1L -> Facing.RIGHT
-                    else -> throw IllegalArgumentException("Unexpected output")
-                }
-                Facing.RIGHT -> when (moveInput) {
-                    0L -> Facing.UP
-                    1L -> Facing.DOWN
-                    else -> throw IllegalArgumentException("Unexpected output")
-                }
-                Facing.DOWN -> when (moveInput) {
-                    0L -> Facing.RIGHT
-                    1L -> Facing.LEFT
-                    else -> throw IllegalArgumentException("Unexpected output")
-                }
-                Facing.LEFT -> when (moveInput) {
-                    0L -> Facing.DOWN
-                    1L -> Facing.UP
-                    else -> throw IllegalArgumentException("Unexpected output")
-                }
-            }
-
-        }
-
-        private fun getNextLocation(location: Point, facing: Facing): Point {
-            return when (facing) {
-                Facing.UP -> Point(location.x, location.y + 1)
-                Facing.RIGHT -> Point(location.x + 1, location.y)
-                Facing.DOWN -> Point(location.x, location.y - 1)
-                Facing.LEFT -> Point(location.x - 1, location.y)
-            }
         }
 
         private fun printPointMap(map: Map<Point, Long>) {
@@ -124,9 +89,5 @@ class AOC11 {
                 print("\n")
             }
         }
-    }
-
-    enum class Facing {
-        UP, RIGHT, DOWN, LEFT
     }
 }
