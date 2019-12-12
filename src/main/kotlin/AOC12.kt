@@ -27,7 +27,21 @@ class AOC12 {
             }
 
             return system.map { getEnergy(it) }.sum()
+        }
 
+
+        fun part2(moons: List<Point3>): Int {
+            val start = moons.map { Vector3(it, Point3.ORIGIN) }
+
+            var system = stepSimulation(start)
+            var iteration = 1
+
+            while(system != start) {
+                system = stepSimulation(system)
+                iteration ++
+            }
+
+            return iteration
         }
 
         fun stepSimulation(moons: List<Vector3>): List<Vector3> {
@@ -65,10 +79,6 @@ class AOC12 {
         private fun getEnergy(moon: Vector3): Int {
             return (abs(moon.position.x) + abs(moon.position.y) + abs(moon.position.z)) *
                     (abs(moon.velocity.x) + abs(moon.velocity.y) + abs(moon.velocity.z))
-        }
-
-        fun part2(moons: List<Point3>) {
-
         }
     }
 }

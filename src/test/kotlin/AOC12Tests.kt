@@ -12,6 +12,13 @@ class AOC12Tests {
         .map { moon -> moon.replace(Regex("[^0-9,-]"), "").split(",").map { it.toInt() } }
         .map { Point3(it[0], it[1], it[2]) }
 
+    private val example2 = listOf("<x=-8, y=-10, z=0>",
+    "<x=5, y=5, z=10>",
+    "<x=2, y=-7, z=3>",
+    "<x=9, y=-8, z=-3>")
+    .map { moon -> moon.replace(Regex("[^0-9,-]"), "").split(",").map { it.toInt() } }
+    .map { Point3(it[0], it[1], it[2]) }
+
     @Test
     fun `Test the example simulation after 1 step`(){
         val system = example.map { Vector3(it, Point3.ORIGIN) }
@@ -24,5 +31,21 @@ class AOC12Tests {
         val actual = AOC12.stepSimulation(system)
 
         assertIterableEquals(expected, actual)
+    }
+
+    @Test
+    fun `Test the repeat point for example 1 is 2772`(){
+        val expected = 2772;
+        val actual = AOC12.part2(example)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `Test the repeat point for example 2 is 4686774924`(){
+        val expected = 4686774924;
+        val actual = AOC12.part2(example2)
+
+        assertEquals(expected, actual)
     }
 }
