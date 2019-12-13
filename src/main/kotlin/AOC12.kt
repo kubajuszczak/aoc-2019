@@ -18,6 +18,9 @@ fun main() {
 
 class AOC12 {
     companion object {
+
+        private val COMBINATIONS_4_MOONS = combinationsOf2(listOf(0, 1, 2, 3))
+
         fun part1(moons: List<Point3>): Int {
 
             var system = moons.map { Vector3(it, Point3.ORIGIN) }
@@ -36,44 +39,42 @@ class AOC12 {
             var system = stepSimulation(start)
             var iteration = 1
 
-            while(system != start) {
+            while (system != start) {
                 system = stepSimulation(system)
-                iteration ++
+                iteration++
             }
 
             return iteration
         }
 
         fun stepSimulation(moons: List<Vector3>): List<Vector3> {
-            val vectors = ArrayList<Vector3>()
 
-            for (moon in moons) {
-                for (moon2 in moons) {
-                    if (moon != moon2) {
-                        val x = when {
-                            moon.position.x < moon2.position.x -> 1
-                            moon.position.x > moon2.position.x -> -1
-                            else -> 0
-                        }
-                        val y = when {
-                            moon.position.y < moon2.position.y -> 1
-                            moon.position.y > moon2.position.y -> -1
-                            else -> 0
-                        }
-                        val z = when {
-                            moon.position.z < moon2.position.z -> 1
-                            moon.position.z > moon2.position.z -> -1
-                            else -> 0
-                        }
+            val map = HashMap<Vector3, Point3>()
+            for ((index1, index2) in COMBINATIONS_4_MOONS) {
+                val moon = moons[index1]
+                val moon2 = moons[index2]
 
-                        vectors.add(Vector3(moon.position, Point3(x, y, z)))
-                    }
+                val x = when {
+                    moon.position.x < moon2.position.x -> 1
+                    moon.position.x > moon2.position.x -> -1
+                    else -> 0
                 }
+                val y = when {
+                    moon.position.y < moon2.position.y -> 1
+                    moon.position.y > moon2.position.y -> -1
+                    else -> 0
+                }
+                val z = when {
+                    moon.position.z < moon2.position.z -> 1
+                    moon.position.z > moon2.position.z -> -1
+                    else -> 0
+                }
+
+                map[moon] = map[moon]?.plus(Point3(x, y, z)) ?: Point3(x, y, z)
+                map[moon2] = map[moon2]?.plus(-Point3(x, y, z)) ?: -Point3(x, y, z)
             }
 
-            return vectors.groupBy { it.position }
-                .map { Vector3(it.key, moons.find { moon->moon.position == it.key }!!.velocity + it.value.map { moon -> moon.velocity }.reduce { acc, point3 -> acc + point3 }) }
-                .map { Vector3(it.position + it.velocity,  it.velocity) }
+            return map.map { Vector3(it.key.position + it.key.velocity + it.value, it.key.velocity + it.value) }
         }
 
         private fun getEnergy(moon: Vector3): Int {
@@ -89,9 +90,25 @@ data class Point3(val x: Int, val y: Int, val z: Int) {
         return Point3(this.x + b.x, this.y + b.y, this.z + b.z)
     }
 
+    operator fun unaryMinus(): Point3 {
+        return Point3(-this.x, -this.y, -this.z)
+    }
+
     companion object {
         val ORIGIN = Point3(0, 0, 0)
     }
 }
 
 data class Vector3(val position: Point3, val velocity: Point3)
+
+fun <T> combinationsOf2(items: List<T>): List<Pair<T, T>> {
+    val c = ArrayList<Pair<T, T>>()
+    if (items.size > 1) {
+        for (itemIndex in 1 until items.size) {
+            c.add(Pair(items[0], items[itemIndex]))
+        }
+        c.addAll(combinationsOf2(items.drop(1)))
+    }
+
+    return c
+}
