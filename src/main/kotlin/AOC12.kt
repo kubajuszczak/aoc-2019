@@ -1,3 +1,4 @@
+import java.math.BigInteger
 import kotlin.math.abs
 import kotlin.system.measureTimeMillis
 
@@ -33,18 +34,49 @@ class AOC12 {
         }
 
 
-        fun part2(moons: List<Point3>): Int {
-            val start = moons.map { Vector3(it, Point3.ORIGIN) }
+        fun part2(moons: List<Point3>): BigInteger {
+            val x = moons.map { Pair(it.x, 0) }
+            val y = moons.map { Pair(it.y, 0) }
+            val z = moons.map { Pair(it.z, 0) }
 
-            var system = stepSimulation(start)
+            val xRepeat = findRepeat(x)
+            val yRepeat = findRepeat(y)
+            val zRepeat = findRepeat(z)
+
+            return lcm(lcm(xRepeat.toBigInteger(), yRepeat.toBigInteger()), zRepeat.toBigInteger())
+
+        }
+
+
+        private fun findRepeat(moons: List<Pair<Int, Int>>): Int {
+            var system = stepSingleAxis(moons)
             var iteration = 1
 
-            while (system != start) {
-                system = stepSimulation(system)
+            while (system.toSet() != moons.toSet()) {
+                system = stepSingleAxis(system)
                 iteration++
             }
 
             return iteration
+        }
+
+        private fun stepSingleAxis(moons: List<Pair<Int, Int>>): List<Pair<Int, Int>> {
+            val map = HashMap<Pair<Int, Int>, Int>()
+            for ((index1, index2) in COMBINATIONS_4_MOONS) {
+                val moon = moons[index1]
+                val moon2 = moons[index2]
+
+                val v = when {
+                    moon.first < moon2.first -> 1
+                    moon.first > moon2.first -> -1
+                    else -> 0
+                }
+
+                map[moon] = map[moon]?.plus(v) ?: v
+                map[moon2] = map[moon2]?.plus(-v) ?: -v
+            }
+
+            return map.map { Pair(it.key.first + it.key.second + it.value, it.key.second + it.value) }
         }
 
         fun stepSimulation(moons: List<Vector3>): List<Vector3> {
@@ -80,6 +112,24 @@ class AOC12 {
         private fun getEnergy(moon: Vector3): Int {
             return (abs(moon.position.x) + abs(moon.position.y) + abs(moon.position.z)) *
                     (abs(moon.velocity.x) + abs(moon.velocity.y) + abs(moon.velocity.z))
+        }
+
+        private fun lcm(a: BigInteger, b: BigInteger): BigInteger {
+            return a * b / gcd(a, b)
+        }
+
+        private fun gcd(n1: BigInteger, n2: BigInteger): BigInteger {
+            var (a, b) = when {
+                n1 > n2 -> Pair(n1, n2)
+                else -> Pair(n2, n1)
+            }
+
+            while (b != BigInteger.ZERO) {
+                val t = b
+                b = a % b
+                a = t
+            }
+            return a
         }
     }
 }
