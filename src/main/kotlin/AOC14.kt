@@ -9,33 +9,56 @@ fun main() {
         println(AOC14.part1(input))
     }.also { println("${it}ms") }
 
-//    measureTimeMillis {
-//        AOC14.part2(input)
-//    }.also { println("${it}ms") }
+    measureTimeMillis {
+        AOC14.part2(input)
+    }.also { println("${it}ms") }
 
 }
 
 class AOC14 {
     companion object {
-        fun part1(input: List<String>): Int {
-            val reactions = input
+        private fun getReactionList(input: List<String>): List<Reaction> {
+            return input
                 .map { it.split(" => ") }
                 .map { reaction ->
                     val reagents = Regex("(\\d+) ([A-Z]+)").findAll(reaction[0])
-                        .map { val (amount, chem) = it.destructured; Reagent(chem, amount.toInt()) }.toList()
+                        .map { val (amount, chem) = it.destructured; Reagent(chem, amount.toLong()) }.toList()
                     val output = Regex("(\\d+) ([A-Z]+)").find(reaction[1])
-                        .let { val (amount, chem) = it!!.destructured; Reagent(chem, amount.toInt()) }
+                        .let { val (amount, chem) = it!!.destructured; Reagent(chem, amount.toLong()) }
                     Reaction(reagents, output)
                 }
-
-            val requirements =
-                getOreRequirements(listOf(Reagent("FUEL", 1)), emptyList(), reactions).also { println(it) }
-
-            return requirements.filter { it.chem == "ORE" }.sumBy { it.amount }
         }
 
-        fun part2(reactions: List<String>) {
+        fun part1(input: List<String>): Long {
+            val reactions = getReactionList(input)
 
+            val requirements =
+                getOreRequirements(listOf(Reagent("FUEL", 1)), emptyList(), reactions)
+
+            return requirements.filter { it.chem == "ORE" }.map { it.amount }.reduce { acc, l -> acc + l }
+        }
+
+        fun part2(input: List<String>) {
+            val reactions = getReactionList(input)
+
+            var fuel = 3755000L
+            while (true) {
+                fuel++
+                val requirements =
+                    getOreRequirements(listOf(Reagent("FUEL", fuel)), emptyList(), reactions)
+
+                val ore = requirements.filter { it.chem == "ORE" }.map { it.amount }.reduce { acc, l -> acc + l }
+                if (ore >= 1_000_000_000_000) {
+                    println("$ore ore->$fuel fuel")
+                    break
+                }
+            }
+
+            val requirements =
+                getOreRequirements(listOf(Reagent("FUEL", fuel - 1)), emptyList(), reactions)
+
+            val ore = requirements.filter { it.chem == "ORE" }.map { it.amount }.reduce { acc, l -> acc + l }
+            println("$ore ore->${fuel - 1} fuel")
         }
 
         private fun getOreRequirements(
@@ -55,12 +78,12 @@ class AOC14 {
                             currentRemainders[requirement.chem] = outputReagentRemainder - it
                         }
 
-                    if (amountRequiredFromReaction == 0) {
+                    if (amountRequiredFromReaction == 0L) {
                         return@flatMap emptyList<Reagent>()
                     }
 
                     val multiplier =
-                        ceil(amountRequiredFromReaction.toDouble() / reaction.output.amount.toDouble()).toInt()
+                        ceil(amountRequiredFromReaction.toDouble() / reaction.output.amount.toDouble()).toLong()
 
                     val outputRemainder = reaction.output.amount * multiplier - amountRequiredFromReaction
                     currentRemainders[requirement.chem] =
@@ -71,7 +94,8 @@ class AOC14 {
                         .map { reagent ->
                             if (currentRemainders.containsKey(reagent.chem)) {
                                 val useFromRemainders = currentRemainders[reagent.chem]?.let { min(reagent.amount, it) }
-                                    .also { currentRemainders[reagent.chem] = currentRemainders[reagent.chem]!! - it!! } ?: 0
+                                    .also { currentRemainders[reagent.chem] = currentRemainders[reagent.chem]!! - it!! }
+                                    ?: 0
                                 reagent.copy(amount = reagent.amount - useFromRemainders)
                             } else {
                                 reagent
@@ -85,7 +109,7 @@ class AOC14 {
             } else {
                 reagents.filter { it.chem == "ORE" } + getOreRequirements(
                     requirements,
-                    currentRemainders.map { Reagent(it.key, it.value) }.filter { it.amount>0 },
+                    currentRemainders.map { Reagent(it.key, it.value) }.filter { it.amount > 0 },
                     reactions
                 )
             }
@@ -94,8 +118,8 @@ class AOC14 {
 }
 
 data class Reaction(val reagents: List<Reagent>, val output: Reagent)
-data class Reagent(val chem: String, val amount: Int) {
-    operator fun times(n: Int): Reagent {
+data class Reagent(val chem: String, val amount: Long) {
+    operator fun times(n: Long): Reagent {
         return copy(amount = amount * n)
     }
 }
