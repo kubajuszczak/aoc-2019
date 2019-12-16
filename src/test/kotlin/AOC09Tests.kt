@@ -1,7 +1,5 @@
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AOC09Tests {
@@ -11,16 +9,13 @@ class AOC09Tests {
             109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99
         ).map { it.toLong() }
 
-        val output = Channel<Long>(Channel.UNLIMITED)
+        val output = ArrayList<Long>()
 
         runBlocking {
-            return@runBlocking runAsync(IntComputer(outputChannel = output), program)
+            return@runBlocking runAsync(IntComputer(outputFunction = { output.add(it) }), program)
         }
-        runBlocking {
-            output.close()
-            val result = output.toList()
-            Assertions.assertEquals(program, result)
-        }
+
+        assertEquals(program, output)
     }
 
     @Test
@@ -29,13 +24,14 @@ class AOC09Tests {
             1102, 34915192, 34915192, 7, 4, 7, 99, 0
         ).map { it.toLong() }
 
-        val output = Channel<Long>(Channel.UNLIMITED)
-
         runBlocking {
-            return@runBlocking runAsync(IntComputer(outputChannel = output), program)
+            return@runBlocking runAsync(
+                IntComputer(outputFunction = { assertEquals(34915192L * 34915192L, it) }),
+                program
+            )
         }
         runBlocking {
-            Assertions.assertEquals(34915192L * 34915192L, output.receive())
+
         }
     }
 
@@ -43,13 +39,9 @@ class AOC09Tests {
     fun `Test program 2 for large numbers`() {
         val program = listOf(104L, 1125899906842624L, 99L)
 
-        val output = Channel<Long>(Channel.UNLIMITED)
+        runBlocking {
+            return@runBlocking runAsync(IntComputer(outputFunction = { assertEquals(1125899906842624L, it) }), program)
+        }
 
-        runBlocking {
-            return@runBlocking runAsync(IntComputer(outputChannel = output), program)
-        }
-        runBlocking {
-            Assertions.assertEquals(1125899906842624L, output.receive())
-        }
     }
 }

@@ -52,7 +52,7 @@ class AOC15 {
         fun runRepairRobot(program: List<Long>): HashMap<Point, Long> {
             val inputChannel = Channel<Long>()
             val outputChannel = Channel<Long>()
-            val c = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
+            val c = IntComputer(inputFunction = inputChannel::receive, outputFunction = outputChannel::send)
 
             val map = HashMap<Point, Long>()
 

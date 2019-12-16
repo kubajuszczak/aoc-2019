@@ -1,11 +1,10 @@
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.lang.IllegalArgumentException
 import kotlin.system.measureTimeMillis
 
-@ExperimentalCoroutinesApi
+
 fun main() {
     val input = getInput("input11.txt").readText().split(",").map { it.toLong() }
 
@@ -21,35 +20,27 @@ fun main() {
 
 class AOC11 {
     companion object {
-        @ExperimentalCoroutinesApi
         fun part1(program: List<Long>): Int? {
             return runPaintMachine(program).keys.size
         }
 
-        @ExperimentalCoroutinesApi
         fun part2(program: List<Long>) {
             val panels = runPaintMachine(program, mapOf(Pair(Point.ORIGIN, 1L)))
             printPointMap(panels)
         }
 
-        @ExperimentalCoroutinesApi
-        fun runPaintMachine(program: List<Long>, initialPanels: Map<Point, Long> = HashMap()): Map<Point, Long> {
+        private fun runPaintMachine(program: List<Long>, initialPanels: Map<Point, Long> = HashMap()): Map<Point, Long> {
             val inputChannel = Channel<Long>()
             val outputChannel = Channel<Long>(Channel.UNLIMITED)
-            val c = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
+            val c = IntComputer(inputFunction = inputChannel::receive, outputFunction = outputChannel::send)
 
             val panels = initialPanels.toMutableMap()
             var location = Point.ORIGIN
             var direction = Point.UP
 
             runBlocking {
-                launch {
-                    runAsync(c, program)
-                    inputChannel.close()
-                }
-
-                launch {
-                    while (!inputChannel.isClosedForSend) {
+                val io = launch {
+                    while (true) {
                         inputChannel.send(panels[location] ?: 0L)
 
                         val paint = outputChannel.receive()
@@ -63,6 +54,10 @@ class AOC11 {
                         }
                         location += direction
                     }
+                }
+                launch {
+                    runAsync(c, program)
+                    io.cancelAndJoin()
                 }
 
             }

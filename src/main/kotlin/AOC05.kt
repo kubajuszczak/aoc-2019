@@ -1,4 +1,3 @@
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
@@ -18,34 +17,16 @@ class AOC05 {
     companion object {
         fun part1(program: List<Long>) {
             runBlocking {
-                val inputChannel = Channel<Long>(Channel.UNLIMITED)
-                val outputChannel = Channel<Long>(Channel.UNLIMITED)
-                inputChannel.send(1)
-                inputChannel.close()
-
-                val computer = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
+                val computer = IntComputer(inputFunction = {1}, outputFunction = {println("OUTPUT: $it")})
                 runAsync(computer, program)
-                outputChannel.close()
-
-                for (output in outputChannel) {
-                    println("OUTPUT: $output")
-                }
             }
         }
 
         fun part2(program: List<Long>) {
             runBlocking {
-                val inputChannel = Channel<Long>(Channel.UNLIMITED)
-                val outputChannel = Channel<Long>(Channel.UNLIMITED)
-                inputChannel.send(5)
-
-                val computer = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
+                val computer = IntComputer(inputFunction = {5}, outputFunction = {println("OUTPUT: $it")})
                 runAsync(computer, program)
-                outputChannel.close()
 
-                for (output in outputChannel) {
-                    println("OUTPUT: $output")
-                }
             }
         }
     }

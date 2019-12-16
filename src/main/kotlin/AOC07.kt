@@ -22,19 +22,19 @@ class AOC07 {
 
             for (permutation in permutations(listOf(0, 1, 2, 3, 4))) {
                 val channels = (0..4).map { Channel<Long>(Channel.UNLIMITED) }
-                val outputChannel = Channel<Long>(Channel.UNLIMITED)
+                val outputFunction = Channel<Long>(Channel.UNLIMITED)
 
                 runBlocking {
                     channels.forEachIndexed { index, channel -> channel.send(permutation[index].toLong()) }
                     channels[0].send(0)
 
-                    runAsync(IntComputer(inputChannel = channels[0], outputChannel = channels[1]), program)
-                    runAsync(IntComputer(inputChannel = channels[1], outputChannel = channels[2]), program)
-                    runAsync(IntComputer(inputChannel = channels[2], outputChannel = channels[3]), program)
-                    runAsync(IntComputer(inputChannel = channels[3], outputChannel = channels[4]), program)
-                    runAsync(IntComputer(inputChannel = channels[4], outputChannel = outputChannel), program)
+                    runAsync(IntComputer(inputFunction = channels[0]::receive, outputFunction = channels[1]::send), program)
+                    runAsync(IntComputer(inputFunction = channels[1]::receive, outputFunction = channels[2]::send), program)
+                    runAsync(IntComputer(inputFunction = channels[2]::receive, outputFunction = channels[3]::send), program)
+                    runAsync(IntComputer(inputFunction = channels[3]::receive, outputFunction = channels[4]::send), program)
+                    runAsync(IntComputer(inputFunction = channels[4]::receive, outputFunction = outputFunction::send), program)
 
-                    outputs.add(outputChannel.receive())
+                    outputs.add(outputFunction.receive())
                 }
             }
 
@@ -51,11 +51,11 @@ class AOC07 {
                     channels.forEachIndexed { index, channel -> channel.send(permutation[index].toLong()) }
                     channels[0].send(0)
 
-                    launch { runAsync(IntComputer(inputChannel = channels[0], outputChannel = channels[1]), program) }
-                    launch { runAsync(IntComputer(inputChannel = channels[1], outputChannel = channels[2]), program) }
-                    launch { runAsync(IntComputer(inputChannel = channels[2], outputChannel = channels[3]), program) }
-                    launch { runAsync(IntComputer(inputChannel = channels[3], outputChannel = channels[4]), program) }
-                    launch { runAsync(IntComputer(inputChannel = channels[4], outputChannel = channels[0]), program) }
+                    launch { runAsync(IntComputer(inputFunction = channels[0]::receive, outputFunction = channels[1]::send), program) }
+                    launch { runAsync(IntComputer(inputFunction = channels[1]::receive, outputFunction = channels[2]::send), program) }
+                    launch { runAsync(IntComputer(inputFunction = channels[2]::receive, outputFunction = channels[3]::send), program) }
+                    launch { runAsync(IntComputer(inputFunction = channels[3]::receive, outputFunction = channels[4]::send), program) }
+                    launch { runAsync(IntComputer(inputFunction = channels[4]::receive, outputFunction = channels[0]::send), program) }
                 }
 
                 runBlocking {

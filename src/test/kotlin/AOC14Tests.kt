@@ -71,35 +71,35 @@ class AOC14Tests {
 
     @Test
     fun `Test example 1 requires 31 ORE for 1 FUEL`() {
-        val expected = 31
+        val expected = 31L
         val actual = AOC14.part1(example1)
         assertEquals(expected, actual)
     }
 
     @Test
     fun `Test example 2 requires 165 ORE for 1 FUEL`() {
-        val expected = 165
+        val expected = 165L
         val actual = AOC14.part1(example2)
         assertEquals(expected, actual)
     }
 
     @Test
     fun `Test example 3 requires 13312 ORE for 1 FUEL`() {
-        val expected = 13312
+        val expected = 13312L
         val actual = AOC14.part1(example3)
         assertEquals(expected, actual)
     }
 
     @Test
     fun `Test example 4 requires 180697 ORE for 1 FUEL`() {
-        val expected = 180697
+        val expected = 180697L
         val actual = AOC14.part1(example4)
         assertEquals(expected, actual)
     }
 
     @Test
     fun `Test example 5 requires 2210736 ORE for 1 FUEL`() {
-        val expected = 2210736
+        val expected = 2210736L
         val actual = AOC14.part1(example5)
         assertEquals(expected, actual)
     }

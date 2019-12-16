@@ -1,15 +1,12 @@
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.system.measureTimeMillis
 
 fun main() {
     val input = getInput("input13.txt").readText().split(",").map { it.toLong() }
 
-//    measureTimeMillis {
-//        println(AOC13.part1(input))
-//    }.also { println("${it}ms") }
+    measureTimeMillis {
+        println(AOC13.part1(input))
+    }.also { println("${it}ms") }
 
     measureTimeMillis {
         println(AOC13.part2(input))
@@ -19,70 +16,72 @@ fun main() {
 
 class AOC13 {
     companion object {
-        fun part1(program: List<Long>): Int? {
-            val result = runArcadeMachine(program)
-            printArcadeMap(result)
-            return result.filter { it.value == Tile.BLOCK }.keys.size
+        fun part1(program: List<Long>): Int {
+            return runArcadeMachine(program).tiles
+                .also { printArcadeMap(it) }
+                .filter { it.value == Tile.BLOCK }.keys.size
         }
 
-        fun part2(program: List<Long>) {
-            runArcadeMachine(listOf(2L) + program.drop(1))
+        fun part2(program: List<Long>): Long {
+            return runArcadeMachine(listOf(2L) + program.drop(1)).score
         }
 
-        private fun runArcadeMachine(program: List<Long>): Map<Point, Tile> {
-            val inputChannel = Channel<Long>()
-            val outputChannel = Channel<Long>()
-            val c = IntComputer(inputChannel = inputChannel, outputChannel = outputChannel)
+        data class GameState(
+            val x: Long,
+            val y: Long,
+            val value: Long,
+            val score: Long,
+            val tiles: Map<Point, Tile>
+        )
 
-            val tiles = HashMap<Point, Tile>()
+        private fun runArcadeMachine(program: List<Long>): GameState {
+            var ballLocation = Point(0, 0)
+            var paddleLocation = Point(0, 0)
 
-            var score: Long
-            var running = true
-            runBlocking {
-                launch {
-                    runAsync(c, program)
-                    running = false
-                    inputChannel.close()
-                    outputChannel.close()
-                }
+            var state = GameState(0, 0, 0, 0, emptyMap())
+            var outputMode = 0
 
-                launch {
-                    while (running) {
-                        val x = outputChannel.receive()
-                        val y = -outputChannel.receive()
-                        val location = Point(x.toInt(), y.toInt())
+            val outputFunction: suspend (Long) -> Unit = {
+                when (outputMode % 3) {
+                    0 -> state = state.copy(x = it)
+                    1 -> state = state.copy(y = -it)
+                    2 -> {
+                        val location = Point(state.x.toInt(), state.y.toInt())
                         if (location == Point(-1, 0)) {
-                            score = outputChannel.receive()
-                            printArcadeMap(tiles)
-                            println("Score: $score")
+                            state = state.copy(score = it)
                         } else {
-                            tiles[location] = Tile.getTileFromValue(outputChannel.receive())
+                            val tile = Tile.getTileFromValue(it)
+                            val newTiles = state.tiles.toMutableMap().apply { this[location] = tile }
+
+                            if (tile == Tile.BALL) ballLocation = location
+                            else if (tile == Tile.PADDLE) paddleLocation = location
+
+                            state = state.copy(tiles = newTiles)
                         }
                     }
                 }
-
-                launch {
-                    inputChannel.send(0L)
-                    while (running) {
-                        delay(20)
-                        val ball = tiles.entries.find { it.value == Tile.BALL }?.key
-                        val paddle = tiles.entries.find { it.value == Tile.PADDLE }?.key
-
-                        if (paddle != null && ball != null) {
-                            val input = when {
-                                paddle.x < ball.x -> 1L
-                                paddle.x > ball.x -> -1L
-                                else -> 0L
-                            }
-                            inputChannel.send(input)
-                        } else {
-                            delay(100)
-                        }
-                    }
-                }
-
+                outputMode++
             }
-            return tiles
+
+            val inputFunction: suspend () -> Long = {
+                getInput(paddleLocation, ballLocation)
+            }
+
+            val c = IntComputer(inputFunction = inputFunction, outputFunction = outputFunction)
+
+            runBlocking {
+                runAsync(c, program)
+            }
+
+            return state
+        }
+
+        private fun getInput(paddle: Point, ball: Point): Long {
+            return when {
+                paddle.x < ball.x -> 1L
+                paddle.x > ball.x -> -1L
+                else -> 0L
+            }
         }
 
         private fun printArcadeMap(map: Map<Point, Tile>) {
@@ -111,12 +110,12 @@ class AOC13 {
             print(s)
         }
 
-        enum class Tile(val i: Int) {
-            EMPTY(0),
-            WALL(1),
-            BLOCK(2),
-            PADDLE(3),
-            BALL(4);
+        enum class Tile {
+            EMPTY,
+            WALL,
+            BLOCK,
+            PADDLE,
+            BALL;
 
             companion object {
                 fun getTileFromValue(i: Long): Tile {

@@ -1,18 +1,14 @@
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-
 class IntComputer(
     val memory: List<Long> = (0..9000).map { 0L },
-    private val inputChannel: ReceiveChannel<Long> = Channel(),
-    private val outputChannel: SendChannel<Long> = Channel(),
+    private val inputFunction: suspend () -> Long = { 0 },
+    private val outputFunction: suspend (Long) -> Unit = {},
     private val pointer: Int = 0,
     private val relativeBase: Int = 0
 ) {
 
     fun loadProgram(program: List<Long>): IntComputer {
         val newMemory = program + memory.drop(program.size)
-        return IntComputer(newMemory, inputChannel, outputChannel, pointer, relativeBase)
+        return IntComputer(newMemory, inputFunction, outputFunction, pointer, relativeBase)
     }
 
     private fun readImmediate(address: Int): Long {
@@ -62,11 +58,11 @@ class IntComputer(
     }
 
     private fun newState(memory: List<Long>, pointer: Int): IntComputer {
-        return IntComputer(memory, inputChannel, outputChannel, pointer, relativeBase)
+        return IntComputer(memory, inputFunction, outputFunction, pointer, relativeBase)
     }
 
     private fun newState(memory: List<Long>, pointer: Int, relativeBase: Int): IntComputer {
-        return IntComputer(memory, inputChannel, outputChannel, pointer, relativeBase)
+        return IntComputer(memory, inputFunction, outputFunction, pointer, relativeBase)
     }
 
     suspend fun runInstruction(): IntComputer {
@@ -101,7 +97,7 @@ class IntComputer(
                 return newState(newMemory, pointer + 4)
             }
             3 -> { //INPUT
-                val value = inputChannel.receive()
+                val value = inputFunction()
 
                 val newMemory = write(pointer + 1, value, mode1)
 
@@ -110,7 +106,7 @@ class IntComputer(
             4 -> { //OUTPUT
                 val argument1 = getParameter(mode1, pointer + 1)
 
-                outputChannel.send(argument1)
+                outputFunction(argument1)
 
                 return newState(memory, pointer + 2)
             }
