@@ -50,6 +50,14 @@ data class Point(
         return Point(this.y, -this.x)
     }
 
+    fun turnLeft(): Point {
+        return this.rotateAnticlockwise90()
+    }
+
+    fun turnRight(): Point {
+        return this.rotateClockwise90()
+    }
+
     companion object {
         val UP = Point(0, 1)
         val DOWN = Point(0, -1)
